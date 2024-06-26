@@ -1,0 +1,29 @@
+---
+title: "Regressão Linear"
+author: "Thiago Tavares Lopes"
+date: "2024-06-26"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+# pacotes uteis
+library(hnp) # pacote para envelope simulado
+library(lmtest) # teste reset
+library(car) # para teste de multicolinearidade (fatores de inflacao de variancia)
+library(tseries) # teste de Jarque-Bera
+```
+
+```{r}
+dados<-read.table("dados-trabalho1.txt",h=T)
+summary(dados)
+
+```
+
+
+# Introdução
