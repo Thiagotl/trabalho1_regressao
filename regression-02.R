@@ -4,12 +4,7 @@ library(hnp) # pacote para envelope simulado
 library(lmtest) # teste reset
 library(car) # para teste de multicolinearidade (fatores de inflacao de variancia)
 library(tseries) # teste de Jarque-Bera
-## Variaveis:
-# peso (y): peso da criancas ao nascer (gramas)
-# pnatal (x1): variavel binaria que informa se a mae fez (1) ou nao (2) pre-natal
-# pesom (x2): peso da mae (Kg)
-# renda (x3): renda familiar percapta da mae (reais)
-# A ideia eh modelar y em funcao das demais
+
 
 
 ## Importando os dados
@@ -21,9 +16,18 @@ summary(dados) # medidas descritivas
 cor(dados) # correlacao
 plot(dados) # diagrama de dispersao
 
+
+
+
+
+
 ## ajustando o modelo
-fit <- lm(peso~pnatal+pesom+renda,data=dados) # ajustando o modelo
+fit <- lm(y~x1+x2+x3+x4+x5+x6,data=dados) # ajustando o modelo
 summary(fit)
+
+step(fit)
+
+
 # Verifique R2, R2-ajustado, teste F e testes t
 # Mas note que soh podemos "acreditar" nesses testes apos analise de 
 # diagnostico e os varios testes estudados. Veja a seguir.
