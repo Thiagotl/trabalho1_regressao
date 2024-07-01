@@ -1,29 +1,115 @@
 ---
 title: "Regressão Linear"
 author: "Thiago Tavares Lopes"
-date: "2024-06-26"
-output: pdf_document
+date: "`r format(Sys.time(), '%d %B %Y')`"
+header-includes:
+   - \usepackage[brazil]{babel}
+   - \usepackage{bm}
+   - \usepackage{float}
+   - \usepackage{multirow}
+geometry: left=2.5cm, right=2.5cm, top=2cm, bottom=2cm
+toc: true #sumário
+output:
+  bookdown::pdf_document2:
+editor_options:
+  chunk_output_type: console
+  markdown: 
+    wrap: sentence
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-
-
-```{r}
+```{r, include=FALSE}
 # pacotes uteis
 library(hnp) # pacote para envelope simulado
 library(lmtest) # teste reset
 library(car) # para teste de multicolinearidade (fatores de inflacao de variancia)
 library(tseries) # teste de Jarque-Bera
+library(gtsummary)
 ```
+
+```{r setup, include=FALSE, message=FALSE, warning=FALSE}
+options(encoding = "UTF-8")
+
+```
+
+
+# Resultados
+
+
+
+## Modelo 1
+No primeiro momento, o modelo 1 avalia todas as covariaveis para explicar y.
+
+
+```{r, echo=FALSE}
+dados<-read.table("dados-trabalho1.txt",h=T)
+
+#summary(dados)
+#ajuste do modelo 
+fit1<-lm(y~x1+x2+x3+x4+x5+x6, dados)
+summary(fit)
+
+```
+Neste caso apenas as $x1$ e $x2$ foram significativos para explicar y. $R^2$ de 0,9263 e o $\bar{R}^2$ de 0,9217.
+
+1-Verificando as suposições do modelo: \\
+- $S_{0}$ O  modelo está corretamente ajustado. Neste caso usamos o teste RESET para verificar as questões.
 
 ```{r}
-dados<-read.table("dados-trabalho1.txt",h=T)
-summary(dados)
+resettest(fit)
+```
+
+
+
+
+
+```{r, echo=FALSE, results='hide'}
+
+#ANÁLISE DE INFLUÊNCIA
+
+n<-dim(dados)[1]
+
+# varias medidas de influencia
+influence.measures(fit)
+
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+# ALAVANCAGEM
+hatvalues(fit)
+h_bar<-fit$rank / n
+limite<-2*h_bar
+```
+
+Gráfico de Alavancagem
+
+```{r plot, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6, fig.height=4}
+abline(plot(hatvalues(fit),ylab="Alavancagem"), 
+       col="red", h=limite,lty=2)
+which(hatvalues(fit)>limite)
+```
+
+
+
+
+
+```{r plot, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6, fig.height=4}
+# DEFIT 
+dffits(fit)
+limite<-2*sqrt(fit$rank / n)
 
 ```
 
 
-# Introdução
+```{r, echo=FALSE}
+# DFFIT
+
+abline(plot(dffits(fit),ylab="DFFITS"), 
+       col="red", h=c(-limite,limite),lty=2)
+which(abs(dffits(fit))>limite)
+```
+
+
+
+
+
+
