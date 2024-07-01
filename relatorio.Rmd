@@ -11,6 +11,7 @@ geometry: left=2.5cm, right=2.5cm, top=2cm, bottom=2cm
 toc: true #sumário
 output:
   bookdown::pdf_document2:
+    fig.align: 'center'
 editor_options:
   chunk_output_type: console
   markdown: 
@@ -24,6 +25,8 @@ library(lmtest) # teste reset
 library(car) # para teste de multicolinearidade (fatores de inflacao de variancia)
 library(tseries) # teste de Jarque-Bera
 #library(gtsummary)
+#library(cowplot)
+#library(ggplot2)
 ```
 
 ```{r setup, include=FALSE, message=FALSE, warning=FALSE}
@@ -33,7 +36,7 @@ options(encoding = "UTF-8")
 
 
 # Resultados
-Nesta seção são apresentados os resultados dos ajustes do modelo.
+Nesta seção são apresentados os resultados dos ajustes dos modelos.
 
 ## Modelo 1
 
@@ -41,16 +44,20 @@ Ao iniciarmos a construção de um modelo de regressão, devemos fazer uma anál
 ```{r echo=FALSE}
 dados<-read.table("dados-trabalho1.txt",h=T)
 summary(dados)
-
 # dados |> 
 #   dplyr::select(y,x2,x3,x4,x5,x6,x7) |> 
 #   tbl_summary(type = all_continuous() ~ "continuous2",
 #               statistic = all_continuous()~c("{mean}","{median}","{min}", "{max}"))
 ```
 
+Abaixo temos as correlações duas a duas entre as variáveis estudadas no modelo.
+```{r echo=FALSE}
+cor(dados)
+
+```
+
 
 No primeiro momento, o modelo 1 construido avalia todas as covariaveis de $x1$ ate $x7$ para explicar a variabilidade de $y$.
-
 
 ```{r, echo=FALSE}
 dados<-read.table("dados-trabalho1.txt",h=T)
@@ -63,12 +70,14 @@ summary(fit)
 ```
 
 Com um $R^2$ de 0,9263, podemos concluir que o modelo explica 92,63\% da variabilidade de $y$, temos também $\bar{R}^2$ de 0,9217. 
-Pelo teste t de Student, com nível de significância de 5\%, rejeitamos $H_0$ temos que $x1$ e $x2$ foram significativos para o modelo.
-Por último, pelo teste F com nível de significância de 5\%, rejeitamos $H_0$ e concluímos que há pelo menos um regressor foi diferente de zero. 
- 
-Modelo 1: 
+Pelo teste t de Student, com nível de significância de 5\%, rejeitamos $H_0$ e temos que $x1$ e $x2$ foram significativos para o modelo.
+Por último, pelo teste F com nível de significância de 5\%, rejeitamos $H_0$ e concluímos que há pelo menos um regressor diferente de zero. 
 
-$$$$
+### Análise diagnóstico 
+ 
+\textbf{Modelo 1:} 
+
+
 1-Verificando as suposições do modelo:
 
 - $S_{0}$ O  modelo está corretamente especificado. <!-->Neste caso usamos o teste RESET para verificar a hipótese nula $H_0$:O modelo está corretamente especificado.<-->
@@ -92,26 +101,57 @@ t.test(resid(fit),mu=0,alternative="two.sided") # como o p-valor foi de 1 > que 
 ```
 Pelo teste t de Student, com nível de significância de 5\%, temos um p-valor de 1, não há evidências para rejeitar $H_0$, podemos concluir que a médias dos erros é igual a zero.
 
+- $S_2$: Homoscedasticidade dos erros.
+```{r, echo=FALSE}
+## Testa [s2]
+## Teste de Bressch-Pagan (Koenker) de Heteroscedasticidade
+## H0: erros sao homoscedasticos
+bptest(fit, studentize = TRUE) #como o p-valor foi de 0.07121 > 0.05, entao nao se rejeita H0, logo o erros são homoscedasticos
 
+```
 
+Pelo teste t de Student, com nível de significância de 5\%, temos um p-valor de 0,07121, não há evidências para rejeitar $H_0$, podemos concluir que os erros são homoscedásticos. 
 
+- $S_3$: Erros não autocorrelacionados.
+```{r, echo=FALSE}
+## Testa [S3]
+## Teste de Durbin-Watson de autocorrelacao
+## H0: : Nao hah autocorrelacao 
+dwtest(fit)
+#acf(rstudent(fit))
 
+```
+
+Pelo teste Durbin-Watson, com nível de significância de 5\%, temos um p-valor de 0,8131, não há evidências para rejeitar $H_0$, podemos concluir que não há autocorrelação dos erros.
+
+- $S_4$: Multicolinearidade entre as variáveis do modelo.
+```{r, echo=FALSE}
+## Testa [S4]
+## Usa Fatores de Inflacao de Variancia para detectar multicolinearidade
+## Regra de bolso: vif > 10 indica multicolinearidade. vif=1 seria o ideal.
+vif(fit) #Através dos vifs podemos obsevar que x1, x2, x6 e x7 temos o ideal
+
+```
+Nota-se que as variáveis $x1, x2, x5, x6, x7$ não possui colinearidade. Porém, como temos em $x3$ e $x4$ um $VIF > 10$, há indícios de multicolinearidade.
+
+```{r, echo=FALSE}
+## Testa [S5]
+## Teste Jarque-Bera de Normalidade
+## H0: Os erros possuem distribuicao normal
+jarque.bera.test(resid(fit)) # como p-valor > que 0.05, não rejeitamos H0
+```
+
+Pelo teste qui-quadrado, com nível de significância de 5\%, temos um p-valor de 0,6794, não há evidências para rejeitar $H_0$, podemos concluir que erros possuem distribuição normal.
 
 \newpage
-
+### Medidas de influência
 
 ```{r, echo=FALSE, results='hide'}
 
 #ANÁLISE DE INFLUÊNCIA
-
 n<-dim(dados)[1]
-
 # varias medidas de influencia
 influence.measures(fit)
-
-```
-
-```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 # ALAVANCAGEM
 hatvalues(fit)
 h_bar<-fit$rank / n
@@ -120,28 +160,114 @@ limite<-2*h_bar
 
 Gráfico de Alavancagem
 
-```{r plot1, echo=FALSE, , results='hide', message=FALSE, warning=FALSE, fig.width=6, fig.height=4}
+```{r plot1, echo=FALSE, , results='hide', fig.width=6, fig.height=3.8}
+hatvalues(fit)
+h_bar<-fit$rank / n
+limite<-2*h_bar
 abline(plot(hatvalues(fit),ylab="Alavancagem"), 
        col="red", h=limite,lty=2)
-#which(hatvalues(fit)>limite)
+#which(hatvalues(fit)>limite)  potencialmente influentes e podem merecer uma análise mais detalhada
 ```
 
+Pelo gráfico de alavancagem, temos algumas observações bem distantes, como por exemplo a observação 23. Portanto, será necessário avaliar com mais detalhes esses valores
 
-```{r plot2, echo=FALSE, , results='hide', message=FALSE, warning=FALSE, fig.width=6, fig.height=4}
+```{r plot2, echo=FALSE, , results='hide', fig.width=6, fig.height=3.8}
 # DEFIT 
 dffits(fit)
 limite<-2*sqrt(fit$rank / n)
-
-```
-
-
-```{r, echo=FALSE, results='hide'}
-# DFFIT
 
 abline(plot(dffits(fit),ylab="DFFITS"), 
        col="red", h=c(-limite,limite),lty=2)
 #which(abs(dffits(fit))>limite)
 ```
+
+Já no gráfico do DEFITS, podemos verificar também que existem três observações que estão influenciando no modelos, especialmente a observação 23.
+\newpage
+Abaixo temos os DEFITS para cara $\beta$
+
+```{r plot3, echo=FALSE, , results='hide', fig.width=3.3, fig.height=3.5}
+# DFBETA
+dfbetas(fit) # cada beta tem seu DF
+
+dfb1<-dfbetas(fit)[,1]
+dfb2<-dfbetas(fit)[,2]
+dfb3<-dfbetas(fit)[,3]
+dfb4<-dfbetas(fit)[,4]
+dfb5<-dfbetas(fit)[,5]
+dfb6<-dfbetas(fit)[,6]
+dfb7<-dfbetas(fit)[,7]
+
+limite<-2/sqrt(n)
+abline(plot(dfb1,ylab="DFBETA 1"), 
+       col=c("red","blue","red"), h=c(-limite,0,limite),lty=c(2,1,2))
+
+abline(plot(dfb2,ylab="DFBETA 2"), 
+       col=c("red","blue","red"), h=c(-limite,0,limite),lty=c(2,1,2))
+
+abline(plot(dfb3,ylab="DFBETA 3"), 
+       col=c("red","blue","red"), h=c(-limite,0,limite),lty=c(2,1,2))
+
+abline(plot(dfb4,ylab="DFBETA 4"), 
+       col=c("red","blue","red"), h=c(-limite,0,limite),lty=c(2,1,2))
+
+abline(plot(dfb5,ylab="DFBETA 5"), 
+       col=c("red","blue","red"), h=c(-limite,0,limite),lty=c(2,1,2))
+
+abline(plot(dfb6,ylab="DFBETA 6"), 
+       col=c("red","blue","red"), h=c(-limite,0,limite),lty=c(2,1,2))
+
+abline(plot(dfb7,ylab="DFBETA 7"), 
+       col=c("red","blue","red"), h=c(-limite,0,limite),lty=c(2,1,2))
+```
+
+
+No gráfico de distância de Cook podemos verificar que há três observações que estão influenciando o modelo, porém a que se encontra entre 20 até 30, se destaca mais.
+
+```{r plot4, echo=FALSE, results='hide', fig.width=6, fig.height=3.8 }
+# distancia de Cook
+cooks.distance(fit)
+limite<-4/(n-fit$rank )
+abline(plot(cooks.distance(fit),ylab="Distancia de Cook"), 
+       col="red", h=limite,lty=2)
+```
+
+
+
+Neste caso podemos verificar que há valores dos resíduos que estão fora do limite de -2 e 2, levando ao entedimento que o modelo pode não está corretamente adequado para explicar a variabilidade de y.
+```{r plot5, echo=FALSE, results='hide', fig.width=6, fig.height=3.8}
+# residuo
+residuo <- rstudent(fit) # residuo studentizado
+
+plot(residuo,type='p',pch="+",main="Residuos",xlab="indices") # plota os residuos do modelo
+abline(h=c(-2,0,2),lty=3) # inclui linhas horizontais no grafico
+
+#which(abs(residuo)>3)
+
+
+```
+
+Abaixo temos o histograma dos resíduos. 
+
+```{r plot6, echo=FALSE, results='hide', fig.width=6, fig.height=3.8}
+hist(residuo) # histograma dos residuos
+```
+
+Por último, temos o envelope simulado e espera-se que ao menos 90\% dos valores dos resíduos estejam contidos nos intervalos da banda indicada no gráfico.
+
+```{r plot7, echo=FALSE, results='hide', fig.width=6, fig.height=3.8}
+# envelope simulado baseado nos residuos studentizados
+hnp(fit,resid.type="student",halfnormal = F) # envelope simulado 
+                                            #Acima no gráfico do envelope dos resíduos, 
+                                            #temos eles "studentizados" e ordenados. 
+                                            #Esse envelope são bandas de confiança e esperamos que pelo menos 90% dos resíduos estejam entre essas bandas. Essas bandas são feitas através de simulações de Monte Carlo. 
+                                            #Esse envelope indica, principalmente, que a suposição distribucional está correta. Ou seja, a distribuição normal é correta para modelar esses dados.
+```
+
+Como observamos que VIF das variáveis $x3$ e $x4$ estão maiores que dez. Irei remover as suas respectivas observações e gerar um novo modelo.
+
+
+
+
 
 
 
