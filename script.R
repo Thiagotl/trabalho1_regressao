@@ -3,13 +3,18 @@ library(lmtest) # teste reset
 library(car) # para teste de multicolinearidade (fatores de inflacao de variancia)
 library(tseries) # teste de Jarque-Bera
 library(gtsummary)
+library(dplyr)
 
 
 
 #data set
 dados<- read.table("dados-trabalho1.txt",h=T) 
 View(dados)
-
+summary(dados)
+dados |> 
+  select(y,x2,x3,x4,x5,x6,x7) |> 
+  tbl_summary(type = all_continuous() ~ "continuous2",
+              statistic = all_continuous()~c("{mean}","{median}","{min}", "{max}"))
 summary(dados)
 cor(dados) # ha multicolinearidade entre x3 e x4
 plot(dados)
@@ -17,9 +22,9 @@ plot(dados)
 
 ## ajustando o modelo
 fit <- lm(y~x1+x2+x3+x4+x5+x6+x7,data=dados) # ajustando o modelo
-summary(fit)
+#summary(fit)
 
-tbl_regression(fit)
+#tbl_regression(fit)
 #teste F: Pelo teste F se rejeitou HO, ou seja, pelo menos um beta é diferente de zero.
 #teste t: para o modelo em estudo x1 e x6 foram significativos para o modelo, visto que o p-valor foi menor que 0.05
 

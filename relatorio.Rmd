@@ -23,7 +23,7 @@ library(hnp) # pacote para envelope simulado
 library(lmtest) # teste reset
 library(car) # para teste de multicolinearidade (fatores de inflacao de variancia)
 library(tseries) # teste de Jarque-Bera
-library(gtsummary)
+#library(gtsummary)
 ```
 
 ```{r setup, include=FALSE, message=FALSE, warning=FALSE}
@@ -33,11 +33,23 @@ options(encoding = "UTF-8")
 
 
 # Resultados
-
-
+Nesta seção são apresentados os resultados dos ajustes do modelo.
 
 ## Modelo 1
-No primeiro momento, o modelo 1 avalia todas as covariaveis para explicar y.
+
+Ao iniciarmos a construção de um modelo de regressão, devemos fazer uma análise descritiva para avaliar nosso conjunto de dados.
+```{r echo=FALSE}
+dados<-read.table("dados-trabalho1.txt",h=T)
+summary(dados)
+
+# dados |> 
+#   dplyr::select(y,x2,x3,x4,x5,x6,x7) |> 
+#   tbl_summary(type = all_continuous() ~ "continuous2",
+#               statistic = all_continuous()~c("{mean}","{median}","{min}", "{max}"))
+```
+
+
+No primeiro momento, o modelo 1 construido avalia todas as covariaveis de $x1$ ate $x7$ para explicar a variabilidade de $y$.
 
 
 ```{r, echo=FALSE}
@@ -45,21 +57,47 @@ dados<-read.table("dados-trabalho1.txt",h=T)
 
 #summary(dados)
 #ajuste do modelo 
-fit1<-lm(y~x1+x2+x3+x4+x5+x6, dados)
+fit<-lm(y~x1+x2+x3+x4+x5+x6+x7, dados)
 summary(fit)
 
 ```
-Neste caso apenas as $x1$ e $x2$ foram significativos para explicar y. $R^2$ de 0,9263 e o $\bar{R}^2$ de 0,9217.
 
-1-Verificando as suposições do modelo: \\
-- $S_{0}$ O  modelo está corretamente ajustado. Neste caso usamos o teste RESET para verificar as questões.
+Com um $R^2$ de 0,9263, podemos concluir que o modelo explica 92,63\% da variabilidade de $y$, temos também $\bar{R}^2$ de 0,9217. 
+Pelo teste t de Student, com nível de significância de 5\%, rejeitamos $H_0$ temos que $x1$ e $x2$ foram significativos para o modelo.
+Por último, pelo teste F com nível de significância de 5\%, rejeitamos $H_0$ e concluímos que há pelo menos um regressor foi diferente de zero. 
+ 
+Modelo 1: 
 
-```{r}
-resettest(fit)
+$$$$
+1-Verificando as suposições do modelo:
+
+- $S_{0}$ O  modelo está corretamente especificado. <!-->Neste caso usamos o teste RESET para verificar a hipótese nula $H_0$:O modelo está corretamente especificado.<-->
+
+```{r, echo=FALSE}
+## Teste RESET de especificacao
+## H0: O modelo esta corretamente especificado
+
+resettest(fit) # como p-valor > alfa, então não se rejeita H0 e o modelo esta corretamente especifcado
 ```
 
+Pelo teste F, com nível de significância de 5\%, temos um p-valor de 0,7976, não há evidências para rejeitar $H_0$, podemos concluir que o modelo está corretamente específicado.  
+
+- $S_1$: A média dos Erros é igual a zero.
+```{r, echo=FALSE}
+## Testa [S1]
+## Teste t para a média dos erros
+## H0: média dos erros eh igual a zero
+t.test(resid(fit),mu=0,alternative="two.sided") # como o p-valor foi de 1 > que alfa, entao nao se rejeita H0
+                                                # média dos erros é igual a 0 
+```
+Pelo teste t de Student, com nível de significância de 5\%, temos um p-valor de 1, não há evidências para rejeitar $H_0$, podemos concluir que a médias dos erros é igual a zero.
 
 
+
+
+
+
+\newpage
 
 
 ```{r, echo=FALSE, results='hide'}
@@ -82,17 +120,14 @@ limite<-2*h_bar
 
 Gráfico de Alavancagem
 
-```{r plot, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6, fig.height=4}
+```{r plot1, echo=FALSE, , results='hide', message=FALSE, warning=FALSE, fig.width=6, fig.height=4}
 abline(plot(hatvalues(fit),ylab="Alavancagem"), 
        col="red", h=limite,lty=2)
-which(hatvalues(fit)>limite)
+#which(hatvalues(fit)>limite)
 ```
 
 
-
-
-
-```{r plot, echo=FALSE, message=FALSE, warning=FALSE, fig.width=6, fig.height=4}
+```{r plot2, echo=FALSE, , results='hide', message=FALSE, warning=FALSE, fig.width=6, fig.height=4}
 # DEFIT 
 dffits(fit)
 limite<-2*sqrt(fit$rank / n)
@@ -100,12 +135,12 @@ limite<-2*sqrt(fit$rank / n)
 ```
 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, results='hide'}
 # DFFIT
 
 abline(plot(dffits(fit),ylab="DFFITS"), 
        col="red", h=c(-limite,limite),lty=2)
-which(abs(dffits(fit))>limite)
+#which(abs(dffits(fit))>limite)
 ```
 
 
