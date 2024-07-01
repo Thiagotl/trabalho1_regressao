@@ -69,7 +69,7 @@ summary(fit)
 
 ```
 
-Com um $R^2$ de 0,9263, podemos concluir que o modelo explica 92,63\% da variabilidade de $y$, temos também $\bar{R}^2$ de 0,9217. 
+Com um $R^2$ de 0,928, podemos concluir que o modelo explica 92,8\% da variabilidade de $y$, temos também $\bar{R}^2$ de 0,9229. 
 Pelo teste t de Student, com nível de significância de 5\%, rejeitamos $H_0$ e temos que $x1$ e $x2$ foram significativos para o modelo.
 Por último, pelo teste F com nível de significância de 5\%, rejeitamos $H_0$ e concluímos que há pelo menos um regressor diferente de zero. 
 
@@ -263,13 +263,37 @@ hnp(fit,resid.type="student",halfnormal = F) # envelope simulado
                                             #Esse envelope indica, principalmente, que a suposição distribucional está correta. Ou seja, a distribuição normal é correta para modelar esses dados.
 ```
 
-Como observamos que VIF das variáveis $x3$ e $x4$ estão maiores que dez. Irei remover as suas respectivas observações e gerar um novo modelo.
+Como observamos que VIF das variáveis, $x3$ e $x4$ estão maiores que dez, logo $x3$ será removida do modelo, e no caso da variável $x4$ deve parnecer visto que sua correlação com y é relativamente maior. Além disso, será removido a observação 23.
 
+Agora temos que $x1, x4 e x6$, foram significativos para o modelo. 
 
+```{r, echo=FALSE}
+dados23<-dados[-23,]
+fit2<-lm(y~x1+x4+x2+x5+x6+x7, data=dados23)
+summary(fit2)
+```
+O  $R^{2}$ é de 0,9295, ou seja, o modelo explica 92,95\% da variabilidade de y. Porém, com a remoção da observação 23 não podemos comparar o modelo, pois se trata de banco de dados diferente agora.
 
+Logo temos o modelo final :
 
+$$y = \beta_1+\beta_{2}x_1+\beta_{3}x_2+\beta_{4}x_4+\beta_{5}x_5+\beta_{6}x_6+\beta_{7}x_7$$ 
+A partir do modelo,  podemos realizar uma predição y baseada no modelo em questão
 
+```{r, echo=FALSE}
 
+predict(fit2)
+```
+
+Uma outra forma de obter um modelo é usar a função step(.) que seleciona modelo baseado no AIC e stepwise.
+
+```{r echo=FALSE}
+
+step(fit2)
+fit3<-lm(y ~ x1 + x4 + x6, data = dados23)
+summary(fit3)
+```
+
+Para esse novo modelo houve um pequeno aumento do critério de seleção $\bar{R}^{2}$.
 
 
 
